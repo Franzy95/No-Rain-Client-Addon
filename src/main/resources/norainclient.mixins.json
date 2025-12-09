@@ -6,7 +6,8 @@
   "mixins": [
   ],
   "client": [
-    "EntityRendererMixin"
+    "EntityRendererMixin",
+    "GuiInventoryMixin"
   ],
   "injectors": {
     "defaultRequire": 1

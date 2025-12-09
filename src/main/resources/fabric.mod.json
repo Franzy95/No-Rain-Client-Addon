@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "nrc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "No Rain Client",
   "description": "Disables rain rendering client side.",
   "authors": [
@@ -17,6 +17,7 @@
   "entrypoints": {
     "btw:addon": [
       "com.franzy.norainclient.NoRainClientAddon"
+
     ]
       },
   "mixins": [
