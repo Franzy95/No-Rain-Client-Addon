@@ -5,6 +5,17 @@ import net.fabricmc.loom.api.processor.SpecContext
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption;
+
+buildscript {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+    }
+}
+
 plugins {
 	id 'maven-publish'
 	id 'fabric-loom' version "1.4-SNAPSHOT"
@@ -23,6 +34,10 @@ repositories {
 	maven {
 		name = 'Babric'
 		url = 'https://maven.glass-launcher.net/babric'
+	}
+	maven {
+		name = 'Modrinth'
+		url = 'https://api.modrinth.com/maven'
 	}
 	maven {
 		url file('mavenRepo')
@@ -88,6 +103,15 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
+	dependsOn 'copyBtwJar'
+}
+
+// Add BTW jar to compile classpath if it exists
+afterEvaluate {
+	def btwJar = file("build_BTW/tmp/BTW_dev/BTW-CE-Intermediary.jar")
+	if (btwJar.exists()) {
+		sourceSets.main.compileClasspath = sourceSets.main.compileClasspath.plus(files(btwJar))
+	}
 }
 
 java {
@@ -115,6 +139,28 @@ runServer {
 	dependsOn(jar)
 }
 
+tasks.register('copyBtwJar', Copy) {
+    def depInter = dependencies.create("maven.modrinth:btwce:${project.btw_version}:intermediary")
+    def depDoc = dependencies.create("maven.modrinth:btwce:${project.btw_version}:javadoc")
+    def depMappings = dependencies.create("btw.community:mappings:1.0.3")
+
+    def config = configurations.detachedConfiguration(depInter, depDoc, depMappings)
+    config.transitive = false
+
+    from config
+    into file("build_BTW/tmp/BTW_dev")
+
+    rename { String fileName ->
+        if (fileName.contains("javadoc")) {
+            return "BTW-CE-Intermediary-javadoc.jar"
+        }
+        if (fileName.contains("mappings")) {
+            return "BTW-CE-mappings.jar"
+        }
+        return "BTW-CE-Intermediary.jar"
+    }
+}
+
 class BTWJarReplacer implements MinecraftJarProcessor<Spec> {
 	String name
 	String path
@@ -134,14 +180,17 @@ class BTWJarReplacer implements MinecraftJarProcessor<Spec> {
 	void processJar(java.nio.file.Path jar, Spec spec, ProcessorContext context) throws IOException {
 		// Replace the Minecraft jar with the custom one from BTW_dev.
 		// This is just a straight up file replacement, no remapping or anything.
-		if (!Files.exists(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip"))) {
-			// Print a warning if the BTW_dev zip doesn't exist.
-			System.err.println("BTW_dev zip not found, skipping BTWJarReplacer")
+		def btwJarPath = Paths.get(path, "build_BTW/tmp/BTW_dev/BTW-CE-Intermediary.jar")
+		if (!Files.exists(btwJarPath)) {
+			// Print a warning if the BTW jar doesn't exist.
+			System.err.println("BTW jar not found at " + btwJarPath + ", skipping BTWJarReplacer")
 		} else {
-			System.out.println("BTW_dev zip found, replacing Minecraft jar with BTW_dev jar.")
-			Files.copy(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip"), jar, StandardCopyOption.REPLACE_EXISTING)
-			// Add Javadocs
-			Files.copy(Paths.get(path, "build_BTW/BTW_dev/BTW_dev-javadoc.jar"), jar.resolveSibling(jar.getFileName().toString().replace(".jar", "-javadoc.jar")), StandardCopyOption.REPLACE_EXISTING)
+			System.out.println("BTW jar found, replacing Minecraft jar with BTW jar.")
+			Files.copy(btwJarPath, jar, StandardCopyOption.REPLACE_EXISTING)
+			def javadocPath = Paths.get(path, "build_BTW/tmp/BTW_dev/BTW-CE-Intermediary-javadoc.jar")
+			if (Files.exists(javadocPath)) {
+				Files.copy(javadocPath, jar.resolveSibling(jar.getFileName().toString().replace(".jar", "-javadoc.jar")), StandardCopyOption.REPLACE_EXISTING)
+			}
 		}
 	}
 
@@ -159,10 +208,11 @@ class BTWJarReplacer implements MinecraftJarProcessor<Spec> {
 
 		@Override
 		int hashCode() {
-			if (!Files.exists(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip"))) {
+			def btwJarPath = Paths.get(path, "build_BTW/tmp/BTW_dev/BTW-CE-Intermediary.jar")
+			if (!Files.exists(btwJarPath)) {
 				return name.hashCode()
 			} else {
-				return Files.getLastModifiedTime(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip")).hashCode() ^ name.hashCode()
+				return Files.getLastModifiedTime(btwJarPath).hashCode() ^ name.hashCode()
 			}
 		}
 	}

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "norainclient",
-  "version": "1.0.1",
-  "name": "No Rain Client",
+  "id": "norain-ce",
+  "version": "1.0.0",
+  "name": "No Rain CE",
   "description": "Disables rain rendering client side.",
   "authors": [
     "Franzy"

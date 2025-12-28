@@ -1,7 +1,7 @@
 package com.franzy.norainclient;
 
-import btw.BTWAddon;
-import btw.AddonHandler;
+import api.BTWAddon;
+import api.AddonHandler;
 
 public class NoRainClientAddon extends BTWAddon {
 
@@ -16,13 +16,12 @@ public class NoRainClientAddon extends BTWAddon {
 
     @Override
     public String getVersionString() {
-        return "1.0.1";
+        return "1.0.0";
     }
 
     @Override
     public void initialize() {
         AddonHandler.logMessage(this.getName() + " Version " + this.getVersionString() + " Initializing...");
-
     }
 }
 
