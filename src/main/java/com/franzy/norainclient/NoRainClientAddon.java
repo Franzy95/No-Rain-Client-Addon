@@ -1,7 +1,7 @@
 package com.franzy.norainclient;
 
-import btw.BTWAddon;
-import btw.AddonHandler;
+import api.BTWAddon;
+import api.AddonHandler;
 
 public class NoRainClientAddon extends BTWAddon {
 
